@@ -1,9 +1,9 @@
-import {Tabs, useRouter} from 'expo-router';
+import {Tabs} from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
-import {useNavigation} from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { ColorPalette } from "@/constants/Colors";
 
 export default function TabLayout() {
-
     const navigation = useNavigation();
 
     return (
@@ -11,8 +11,9 @@ export default function TabLayout() {
             screenOptions={{
                 tabBarActiveTintColor: "white",
                 tabBarStyle: {
-                    height: 60,
-                    borderRadius: 50,
+                    height: 80,
+                    opacity: 0.8,
+                    backgroundColor: ColorPalette.green,
                 },
                 tabBarLabelStyle: {
                     opacity: 0,
@@ -20,9 +21,8 @@ export default function TabLayout() {
             }}
         >
             <Tabs.Screen
-                name="index"
+                name="home"
                 options={{
-                    tabBarStyle: { backgroundColor: 'black' },
                     headerShown: false,
                     title: 'Home',
                     tabBarIcon: ({ color }) => <Ionicons size={28} name="home" color={color} />,
@@ -31,7 +31,6 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="recherche"
                 options={{
-                    tabBarStyle: { backgroundColor: 'black' },
                     headerShown: false,
                     title: 'Recherche',
                     tabBarIcon: ({ color }) => <Ionicons size={28} name="search" color={color} />,
@@ -40,13 +39,12 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="bookDetails"
                 options={{
+                    headerShown: true,
                     headerLeft: () => <Ionicons size={20} style={{marginLeft: 15}} name="arrow-back" color="white" onPress={() => {
                         // @ts-ignore
                         navigation.navigate('recherche')
                     }} />,
                     headerStyle: { backgroundColor: 'black' },
-                    tabBarStyle: { backgroundColor: 'black' },
-                    headerShown: true,
                     href: null,
                     title: '',
                 }}
@@ -54,13 +52,9 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    headerStyle: { backgroundColor: 'black' },
-                    headerTitleStyle: {fontSize: 20, color: 'white'},
-                    tabBarStyle: { backgroundColor: 'black' },
-                    headerShown: false,
-                    title: 'Profil',
-                    tabBarIcon: ({ color }) => <Ionicons size={28} name="person" color={color} />,
-                }}
+                  headerShown: false,
+                  title: 'Mon profil',
+                  tabBarIcon: ({ color }) => <Ionicons size={28} name="person" color={color} /> }}
             />
         </Tabs>
     );

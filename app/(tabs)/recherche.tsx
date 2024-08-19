@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Image, Button} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 
 
 export default function Tab() {
@@ -45,6 +46,7 @@ export default function Tab() {
         <FlatList
               data={searchResults}
               keyExtractor={item => item.id.toString()}
+
               renderItem={({item}) => (
                   <TouchableOpacity style={styles.resultItem} onPress={() => handlePress(item)}>
                     <Image
@@ -55,6 +57,12 @@ export default function Tab() {
                       <Text style={styles.resultTitle}>{item.volumeInfo.title}</Text>
                       <Text style={styles.resultAuthor}>{item.volumeInfo.authors?.join(', ')}</Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.addButton}
+                      onPress={() => navigation.navigate('addToLibraryModal', { data: item.volumeInfo })} // On ajoute une fonction pour gérer l'ajout
+                    >
+                      <AntDesign name="pluscircleo" size={20} color="#fff" />
+                    </TouchableOpacity>
                   </TouchableOpacity>
               )}
               ListEmptyComponent={<Text style={styles.noResultsText}>Aucun résultat</Text>}/>
@@ -114,6 +122,15 @@ const styles = StyleSheet.create({
   resultAuthor: {
     fontSize: 14,
     color: '#888',
+  },
+  addButton: {
+    padding: 10,
+    borderRadius: 5,
+    marginLeft: 10, // Pour ajouter un peu d'espace entre le bouton et le texte
+  },
+  addButtonText: {
+    color: '#fff', // Couleur du texte
+    fontSize: 14,
   },
   noResultsText: {
     padding: 20,

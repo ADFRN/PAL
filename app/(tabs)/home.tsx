@@ -19,7 +19,6 @@ export default function Tab() {
             if (userDoc.exists()) {
                 return userDoc.data();
             } else {
-                console.log('No such document!');
                 return null;
             }
         } catch (error) {
@@ -35,7 +34,6 @@ export default function Tab() {
             setIsLoading(true);
             try {
                 const userInfo = await getUserInformation(user.uid);
-                console.log(userInfo);
                 if (userInfo && userInfo.library) {
                     setLibrary(userInfo.library);
                 } else {

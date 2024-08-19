@@ -1,39 +1,22 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import {FIREBASE_AUTH} from "@/FirebaseConfig";
-import {User} from "@firebase/auth";
-import BottomLoginSheet from "@/components/BottomLoginSheet";
-import {Ionicons} from "@expo/vector-icons";
-import {useNavigation} from "@react-navigation/native";
+import { FIREBASE_AUTH } from "@/FirebaseConfig";
+import { User } from "@firebase/auth";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get('window');
 
-export default function Tab() {
-    const navigation = useNavigation();
+export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(FIREBASE_AUTH.currentUser);
-    const auth = FIREBASE_AUTH;
-
-    useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                setUser(user);
-            } else {
-                setUser(null);
-            }
-        });
-
-        return () => {
-            unsubscribe();
-        };
-    }, []);
+    if (!user) return;
+    const navigation = useNavigation();
 
     return (
         <View style={styles.container}>
-            {user ? (
-                <>
                     <Ionicons name={'settings-sharp'} size={20} color={'#fff'} style={styles.settingsIcon} onPress={() => {
                         //@ts-ignore
-                        navigation.navigate('settingsUserModal')
+                        navigation.navigate('settings');
                     }}/>
                     <Image
                     source={{uri: user.photoURL ? user.photoURL : 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp'}}
@@ -49,14 +32,10 @@ export default function Tab() {
                         <TouchableOpacity style={styles.section} onPress={() => console.log('Mes amis')}>
                             <Text style={styles.sectionText}>AMIS</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.section} onPress={() => console.log('Mes notes')}>
+                        <TouchableOpacity style={styles.section} onPress={() => console.log('Mes avis')}>
                             <Text style={styles.sectionText}>NOTES</Text>
                         </TouchableOpacity>
                     </View>
-                </>
-            ) : (
-                <BottomLoginSheet />
-            )}
         </View>
     );
 };

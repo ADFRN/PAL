@@ -2,18 +2,11 @@ import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, FlatList} from 'react-native';
 import {useIsFocused, useNavigation, useRoute} from "@react-navigation/native";
 import {FIREBASE_AUTH, FIREBASE_DB} from "@/FirebaseConfig";
-import {doc, getDoc, setDoc, updateDoc, arrayUnion, collection, getDocs} from "@firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "@firebase/firestore";
 import {Ionicons} from "@expo/vector-icons";
 import RatingModal from "@/components/RatingModal";
-
-const { width } = Dimensions.get('window');
-
-interface Book {
-    bookID: string;
-    title: string;
-    img: string;
-    addedAt: string;
-}
+import { width } from "@/constants/utils";
+import AddToLibraryButton from "@/components/AddToLibraryButton";
 
 export default function Tab() {
     const user = FIREBASE_AUTH.currentUser;
@@ -22,6 +15,8 @@ export default function Tab() {
     const book: any = route.params;
     const isFocused = useIsFocused();
     const navigation = useNavigation();
+
+    const [bookExists, setBookExists] = useState(false);
     const [ratings, setRatings] = useState<any[]>([]);
     const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
 
@@ -29,7 +24,7 @@ export default function Tab() {
         const fetchRatings = async () => {
             try {
                 const bookID = book.book.volumeInfo.industryIdentifiers[0].identifier;
-                const ratingsCollectionRef = collection(db, 'books', bookID, 'ratings');
+                const ratingsCollectionRef = collection(db, 'books', bookID, 'reviews');
                 const ratingsSnapshot = await getDocs(ratingsCollectionRef);
 
                 const ratingsList = ratingsSnapshot.docs.map(doc => ({
@@ -43,42 +38,17 @@ export default function Tab() {
             }
         };
         fetchRatings();
-    }, [book.book, isFocused]);
+    }, [book.book, isFocused, isRatingModalVisible]);
 
     const handleDescription = (data: any) => {
         // @ts-ignore
         navigation.navigate('bookDetailsModal', { data });
     }
 
-
-
-    const handleAddToLibrary = async (bookData: any) => {
-        if (!user) return;
-        try {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            const newBook: Book = {
-                bookID: bookData.industryIdentifiers[0].identifier,
-                title: bookData.title,
-                img: bookData.imageLinks.thumbnail,
-                addedAt: new Date().toISOString(),
-            };
-
-            if (userDoc.exists()) {
-                // Utiliser arrayUnion pour ajouter le nouveau livre à la bibliothèque existante
-                await updateDoc(userDocRef, {
-                    library: arrayUnion(newBook),
-                });
-            } else {
-                // Si le document n'existe pas, créer un nouveau document avec le livre
-                await setDoc(userDocRef, { library: [newBook] });
-            }
-            console.log('Book added to library successfully!');
-        } catch (error) {
-            console.error('Error adding book to library: ', error);
-        }
-    };
+    const handleAddToLibrary = (data: any) => {
+        // @ts-ignore
+        navigation.navigate('addToLibraryModal', { data });
+    }
 
     const openRatingModal = () => {
         setIsRatingModalVisible(true);
@@ -88,22 +58,46 @@ export default function Tab() {
         setIsRatingModalVisible(false);
     };
 
+    const checkIfBookExists = async () => {
+        if (!user) return;
+
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                const userLibrary = userDoc.data().library || [];
+                const bookID = book.book.volumeInfo.industryIdentifiers[0].identifier;
+
+                const bookExistsInLibrary = userLibrary.some((book: { bookID: any; }) => book.bookID === bookID);
+
+                setBookExists(bookExistsInLibrary);
+            }
+        } catch (error) {
+            console.error('Error checking if book exists: ', error);
+        }
+    };
+
+    useEffect(() => {
+        checkIfBookExists();
+    }, []);
+
 
     return (
         <View style={styles.container}>
             <View style={styles.primaryContent}>
-                <Image source={{ uri: book.book.volumeInfo?.imageLinks?.thumbnail }} style={styles.bookImage} resizeMode="contain" />
+                <Image source={{ uri: book.book.volumeInfo?.imageLinks?.thumbnail }} style={styles.bookImage} resizeMode="contain"  />
                 <Text style={styles.bookTitle}>{book.book.volumeInfo?.title}</Text>
                 <View style={styles.bookAuthorContainer}>
                 <Text style={styles.bookAuthor}>par {book.book.volumeInfo?.authors?.join(', ')}</Text>
-                <Text style={styles.bookReleaseDate}>{book.book.volumeInfo?.publishedDate}</Text>
+                <Text style={styles.bookReleaseDate}>{new Date(book.book.volumeInfo?.publishedDate).toLocaleDateString()}</Text>
                 </View>
-                <TouchableOpacity style={styles.sectionAddToLibrary} onPress={() => handleAddToLibrary(book.book?.volumeInfo)}>
-                    <View style={styles.sectionTextAdd}>
-                        <Ionicons name="add" size={20} color="black" />
-                        <Text style={styles.sectionText}>Ajouter a ma bibliothèque</Text>
-                    </View>
-                </TouchableOpacity>
+                {bookExists ?
+                  (
+                        <AddToLibraryButton text="Ce livre est déjà dans votre bibliothèque" disabled iconName="checkmark-outline" />
+                    ) : (
+                      <AddToLibraryButton onPress={() => handleAddToLibrary(book.book?.volumeInfo)} text={"Ajouter a ma bibliothèque"} iconName="add" />
+                )}
                 <View style={styles.bookActionsContainer}>
                     <TouchableOpacity style={styles.section} onPress={() => handleDescription(book.book.volumeInfo)}>
                         <Text style={styles.sectionText}>Resume</Text>
@@ -120,8 +114,8 @@ export default function Tab() {
                     renderItem={({ item }) => (
                         <View style={styles.ratingContainer}>
                             <Text style={styles.ratingText}>Note: {item.rating}/5</Text>
-                            <Text style={styles.commentText}>{item.comment}</Text>
-                            <Text style={styles.dateText}>Posté le: {new Date(item.ratedAt).toLocaleDateString()}</Text>
+                            <Text style={styles.commentText}>{item.review}</Text>
+                            <Text style={styles.dateText}>Posté le: {new Date(item.createdAt).toLocaleDateString()} par {item.reviewerUserName}</Text>
                         </View>
                     )}
                     ListEmptyComponent={<Text style={styles.noRatingsText}>Aucun avis pour ce livre.</Text>}
@@ -131,7 +125,7 @@ export default function Tab() {
             <RatingModal
                 isVisible={isRatingModalVisible}
                 onClose={closeRatingModal}
-                bookID={book.book.volumeInfo.industryIdentifiers[0].identifier}
+                book={book.book.volumeInfo}
             />
         </View>
     );

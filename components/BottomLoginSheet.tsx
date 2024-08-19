@@ -46,10 +46,8 @@ const ButtonLogin = () => {
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
         width: '100%',
         padding: 26,
-        top: "50%",
         gap: 14,
     },
     btnLight: {
